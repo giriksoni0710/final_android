@@ -17,9 +17,11 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class newslistreddit extends AppCompatActivity {
 
@@ -27,61 +29,102 @@ public class newslistreddit extends AppCompatActivity {
     RecyclerView.Adapter mAdaptor;
     RecyclerView.LayoutManager layoutManager;
     String redit_subname;
-    ArrayList<String> arrayList;
+    ArrayList<String> dataitems, titlelist;
 
     private RequestQueue mrequestQue;
     private StringRequest mstringRequest;
     private String url;
+    String fifth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_newslistreddit);
 
-//        recyclerView = findViewById(R.id.recyclerview);
-//
-//        layoutManager = new LinearLayoutManager(getApplicationContext());
-//        recyclerView.setLayoutManager(layoutManager);
-//        recyclerView.setHasFixedSize(false);
+        recyclerView = findViewById(R.id.populate_redit_recyclerview);
+
+        layoutManager = new LinearLayoutManager(getApplicationContext());
+        recyclerView.setHasFixedSize(false);
 //        mAdaptor = new MyAdaptor();
 //        recyclerView.setAdapter(mAdaptor);
-
+        titlelist = new ArrayList<>();
         Intent i = getIntent();
         redit_subname = i.getStringExtra("textname");
 
-        arrayList = new ArrayList();
+        dataitems = new ArrayList();
 
         Log.d("subname",redit_subname);
 
         url = "https://www.reddit.com/r/"+redit_subname+"/.json";
         Log.d("url",url);
-        sendandreceiveData(url);
+        sendandreceivedata(url);
 
     }
 
-    private void sendandreceiveData(String url) {
-        
+    private void sendandreceivedata(String url) {
+
+
         mrequestQue = Volley.newRequestQueue(this);
-        mstringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
+
+        mstringRequest = new StringRequest(Request.Method.GET,url,(response) ->{
+
+            dataitems.add(response.toString());
+
+            Log.d("hello","in");
 
 
-                arrayList.add(response);
+            for(String items : dataitems){
 
-                Log.d("response", response);
+
+                Log.d("items",items);
+
+                try {
+
+
+
+                    JSONObject first = new JSONObject(items);
+
+
+                    JSONObject second = first.getJSONObject("data");
+
+                    JSONArray third = second.getJSONArray("children");
+
+                    for (int j = 0; j<third.length();j++) {
+                        JSONObject fourth = third.getJSONObject(j);
+
+                        fifth = fourth.getJSONObject("data").getString("title");
+
+
+                        titlelist.add(fifth);
+//                        Log.d("length",fifth+"");
+                    }
+
+                    Log.d("titlelist",titlelist.toString());
+
+
+
+                    recyclerView.setLayoutManager(layoutManager);
+                    mAdaptor = new recyclerview_list_reddit(titlelist);
+                    recyclerView.setAdapter(mAdaptor);
+
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
 
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
 
 
-                Toast.makeText(getApplicationContext(),"Your EndPoint doesn't Exist",Toast.LENGTH_SHORT).show();
 
-            }
+        }, (error)->{
+
+            Log.d("error", ""+error);
         });
 
         mrequestQue.add(mstringRequest);
+
+
     }
+
 }
